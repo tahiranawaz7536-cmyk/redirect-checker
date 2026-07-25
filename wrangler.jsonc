@@ -1,1 +1,9 @@
-
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "redirect-checker",
+  "main": "worker.js",
+  "compatibility_date": "2026-07-26",
+  "observability": {
+    "enabled": true
+  }
+}
