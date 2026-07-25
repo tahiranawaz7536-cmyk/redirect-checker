@@ -2,20 +2,20 @@ export default {
   async fetch(request) {
     const url = new URL(request.url);
 
-    // API endpoint
+    // API Endpoint
     if (url.pathname === "/api/check") {
       const target = url.searchParams.get("url");
 
       if (!target) {
         return json({
           success: false,
-          error: "Missing URL parameter."
+          message: "Please provide a URL."
         }, 400);
       }
 
       try {
+        const redirects = [];
         let current = target;
-        const chain = [];
 
         for (let i = 0; i < 10; i++) {
           const response = await fetch(current, {
@@ -25,13 +25,13 @@ export default {
 
           const status = response.status;
 
-          chain.push({
+          redirects.push({
             url: current,
-            status
+            status: status
           });
 
           if (status >= 300 && status < 400) {
-            const location = response.headers.get("location");
+            const location = response.headers.get("Location");
 
             if (!location) break;
 
@@ -43,33 +43,40 @@ export default {
 
         return json({
           success: true,
-          original: target,
-          final: current,
-          redirects: chain.length - 1,
-          chain
+          original_url: target,
+          final_url: current,
+         	redirect_count: redirects.length - 1,
+          chain: redirects
         });
 
-      } catch (err) {
+      } catch (e) {
         return json({
           success: false,
-          error: err.message
+          message: e.message
         }, 500);
       }
     }
 
-    // Serve static files
     return new Response(
-      "Worker is running. Open index.html or use /api/check?url=https://example.com"
+      "Redirect Checker API is running.",
+      {
+        headers: {
+          "Content-Type": "text/plain"
+        }
+      }
     );
   }
 };
 
 function json(data, status = 200) {
-  return new Response(JSON.stringify(data, null, 2), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*"
+  return new Response(
+    JSON.stringify(data, null, 2),
+    {
+      status,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      }
     }
-  });
+  );
 }
